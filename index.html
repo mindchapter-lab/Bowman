@@ -301,6 +301,7 @@ async function loadLive(layer) {
   const mat = find(/^material$/i), matDom = dom(mat);
   const sub = find(/^subdivision$/i);
   const len = find(/^shape__length$/i);
+  const rep = find(/^replace$/i);
   const page = Math.min(meta.maxRecordCount || 1000, 2000), out = [];
   for (let off = 0; ; off += page) {
     const j = await getJSON(layer.url + "/query", { where: "1=1", outFields: "*", returnGeometry: "false", orderByFields: oid, resultOffset: off, resultRecordCount: page, f: "json" });
@@ -317,7 +318,7 @@ async function loadLive(layer) {
       let d = dia ? a[dia.name] : null; if (d != null && diaDom && /unknown/i.test(diaDom[d] || "")) d = null; if (d === 0) d = null;
       let m = mat ? a[mat.name] : null; if (m != null && matDom) m = matDom[m] ?? m; if (m && /unknown/i.test(m)) m = null;
       out.push({ id: String(a[gid] || "").replace(/[{}]/g, "").toLowerCase(), oid: a[oid], iy, dia: d, mat: m || null,
-                 sub: sub && a[sub.name] ? String(a[sub.name]).trim() : null, lenM: len ? a[len.name] : null });
+                 sub: sub && a[sub.name] ? String(a[sub.name]).trim() : null, lenM: len ? a[len.name] : null, rep: rep ? a[rep.name] : null });
     }
     if (!j.exceededTransferLimit || !(j.features || []).length) break;
   }
@@ -348,18 +349,20 @@ function buildAssets(baseline, liveByType) {
       const material = (b && b.material && !/unknown/i.test(b.material)) ? b.material : normMat(f.mat) || (b && b.material) || "";
       const len = t === "Water Main" ? (b && b.length_ft ? +b.length_ft : (f.lenM ? f.lenM * MERC : 0)) : 0;
       assets.push(makeAsset({ id: f.id, oid: f.oid, type: t, sub: f.sub || (b && b.subdivision) || "", material, size, len,
-                              iy: f.iy || (b && b.install_year ? +b.install_year : null), src: b ? "live" : "live (new)" }));
+                              iy: f.iy || (b && b.install_year ? +b.install_year : null), gisRep: f.rep > 0 ? +f.rep : (b && b.gis_replace ? +b.gis_replace : null), src: b ? "live" : "live (new)" }));
     }
     S.retired[t] = baseline.filter(b => b.asset_type === t && !seen.has(b.asset_id)).length;
   }
   return assets;
 }
 const fromBase = (b, src) => makeAsset({ id: b.asset_id, oid: +b.objectid, type: b.asset_type, sub: b.subdivision, material: b.material, size: b.size,
-                                         len: b.length_ft ? +b.length_ft : 0, iy: b.install_year ? +b.install_year : null, src });
+                                         len: b.length_ft ? +b.length_ft : 0, iy: b.install_year ? +b.install_year : null, gisRep: b.gis_replace ? +b.gis_replace : null, src });
 function makeAsset(x) {
   const p = priceRow(x.type, x.size, x.material);
   const qty = x.type === "Water Main" ? x.len : 1;
-  const life = p ? +p.Useful_Life_Years : 50, unit = p ? +p.Unit_Price : 0, prev = p ? +(p.Previous_Unit_Price || p.Unit_Price) : 0;
+  const life = p ? +p.Useful_Life_Years : 50;
+  const useGis = p && /gis replace/i.test(p.Size) && x.gisRep > 0;
+  const unit = useGis ? x.gisRep : (p ? +p.Unit_Price : 0), prev = useGis ? x.gisRep : (p ? +(p.Previous_Unit_Price || p.Unit_Price) : 0);
   const cost = unit * qty, prevCost = prev * qty;
   const due = x.iy ? x.iy + life : null;
   const rem = x.iy ? Math.max(0, due - S.Y) : null;
@@ -412,8 +415,10 @@ function render() {
   const steady = A.reduce((s, a) => s + (a.life ? a.cost / a.life : 0), 0);
   const miles = A.filter(a => a.type === "Water Main").reduce((s, a) => s + a.len, 0) / 5280;
   const ch = pct(total, prevTotal);
+  const HAS_PREV = PRICES.some(p => p.Previous_Unit_Price);
+  $("#typeNote").textContent = HAS_PREV ? "Replacement value at current unit prices, with the change from the previous prices." : "Replacement value at the unit prices in the price and life table.";
   $("#kpis").innerHTML = [
-    ["", money(total), "Replacement value", `${fmt(A.length)} assets incl. ${miles.toFixed(1)} mi of main. ${ch >= 0 ? "+" : ""}${ch}% from previous prices`],
+    ["", money(total), "Replacement value", `${fmt(A.length)} assets incl. ${miles.toFixed(1)} mi of main${HAS_PREV ? `. ${ch >= 0 ? "+" : ""}${ch}% from previous prices` : ""}`],
     ["alert", money(backlog), "Backlog today", "Assets past expected life"],
     ["", money(n10), "Next 10 years", `${Y + 1} to ${Y + 10}`],
     ["", money(n20), "Next 20 years", `${Y + 1} to ${Y + 20}`],
@@ -444,8 +449,8 @@ function render() {
   }).sort((a, b) => b.v - a.v);
   bars("#typeBars", tRows.map(r => ({ l: PLURAL[r.t], m: r.t === "Water Main" ? `${fmt(r.n)} segments, ${miles.toFixed(1)} mi` : fmt(r.n), v: r.v, d: money(r.v), c: TVAR[r.t] })));
   const rng = a => a.length > 1 ? `${a[0]}–${a[a.length - 1]}` : `${a[0] ?? ""}`;
-  table("#typeTbl", [{ h: "Asset" }, { h: "Count", n: 1 }, { h: "Value", n: 1 }, { h: "Change", n: 1 }, { h: "Backlog", n: 1 }, { h: "Useful life" }],
-    tRows.map(r => { const c = pct(r.v, r.p); return [`<span class="sw" style="background:var(${TVAR[r.t]})"></span>${PLURAL[r.t]}`, fmt(r.n), money(r.v), `<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`, money(r.b), `${rng(r.lives)} yrs`]; }));
+  const tCols = [{ h: "Asset" }, { h: "Count", n: 1 }, { h: "Value", n: 1 }].concat(HAS_PREV ? [{ h: "Change", n: 1 }] : [], [{ h: "Backlog", n: 1 }, { h: "Useful life" }]);
+  table("#typeTbl", tCols, tRows.map(r => { const c = pct(r.v, r.p); return [`<span class="sw" style="background:var(${TVAR[r.t]})"></span>${PLURAL[r.t]}`, fmt(r.n), money(r.v)].concat(HAS_PREV ? [`<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`] : [], [money(r.b), `${rng(r.lives)} yrs`]); }));
 
   // subdivisions
   const subs = Object.keys(SUB_NAME).map(code => {
@@ -519,11 +524,11 @@ function render() {
 
   // prices + method
   const seen = new Set(), pr = PRICES.filter(p => { const k = p.Asset + "|" + p.Size; if (seen.has(k)) return false; seen.add(k); return true; });
-  table("#priceTbl", [{ h: "Asset" }, { h: "Size" }, { h: "2026 unit price", n: 1 }, { h: "Previous", n: 1 }, { h: "Change", n: 1 }, { h: "Useful life" }],
+  table("#priceTbl", [{ h: "Asset" }, { h: "Size" }, { h: "Unit price", n: 1 }].concat(HAS_PREV ? [{ h: "Previous", n: 1 }, { h: "Change", n: 1 }] : [], [{ h: "Useful life" }]),
     pr.map(p => { const c = pct(+p.Unit_Price, +p.Previous_Unit_Price); const u = /LF/.test(p.Unit) ? "/LF" : " each";
       const lives = p.Asset === "Water Main" ? PRICES.filter(q => q.Asset === "Water Main" && q.Size === p.Size).map(q => +q.Useful_Life_Years) : [+p.Useful_Life_Years];
-      return [esc(p.Asset), esc(p.Size), `$${fmt(+p.Unit_Price)}${u}`, p.Previous_Unit_Price ? `$${fmt(+p.Previous_Unit_Price)}` : "", `<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`,
-              p.Asset === "Water Main" ? `${Math.min(...lives)}–${Math.max(...lives)} yrs by material` : `${p.Useful_Life_Years} yrs`]; }));
+      return [esc(p.Asset), esc(p.Size), `$${fmt(+p.Unit_Price)}${u}`].concat(HAS_PREV ? [p.Previous_Unit_Price ? `$${fmt(+p.Previous_Unit_Price)}` : "", `<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`] : [],
+              [p.Asset === "Water Main" ? `${Math.min(...lives)}–${Math.max(...lives)} yrs by material` : `${p.Useful_Life_Years} yrs`]); }));
   const bas = {}; PRICES.forEach(p => { if (p.Basis) bas[p.Asset] = p.Basis; });
   $("#basis").innerHTML = Object.entries(bas).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join("");
   const mainLife = [...new Set(PRICES.filter(p => p.Asset === "Water Main").map(p => `${p.Material} ${p.Useful_Life_Years}`))].join(", ");
@@ -531,7 +536,7 @@ function render() {
     ["Asset list", "Live from the town's GIS feature layers. Assets marked abandoned, removed or proposed are left out."],
     ["Install years", "From the GIS install date where one is filled in, otherwise from the baseline rebuilt from plan records, as-built drawings and construction records."],
     ["Useful life", `AWWA ranges for mains by material (${esc(mainLife)} years); EPA small-system ranges for hydrants, valves, service lines and meters.`],
-    ["Unit costs", "2026 planning-level construction costs from 2024–2025 bid tabulations, listed above. Mains are priced per foot by diameter."],
+    ["Unit costs", "The town's price and life table (2025 regional bid tabulations, in 2026 dollars), listed above. Mains are priced per foot by diameter. Meters use the replace value in the GIS when one is filled in."],
     ["Forecast", `Assets past their life are counted as backlog in ${Y}. Each asset then renews every life cycle through ${CONFIG.horizon}, in ${Y} dollars.`],
     ["Steady annual need", "Each asset's replacement cost divided by its useful life, added up. The yearly amount that would fund every renewal over time."]
   ]);
