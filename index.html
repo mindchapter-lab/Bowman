@@ -1,59 +1,577 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Round Hill Water System — Asset Age &amp; Replacement Forecast</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round Hill Water System: Asset Age &amp; Replacement Forecast</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#f4f6f9;color:#1b2430}
-header{background:#0B4F8A;color:#fff;padding:24px 32px}header h1{margin:0 0 6px;font-size:26px}header p{margin:0;opacity:.85}
-main{max-width:1280px;margin:0 auto;padding:20px}
-section{background:#fff;border-radius:10px;padding:20px 24px;margin:0 0 18px;box-shadow:0 1px 3px #0001}
-h2{margin:0 0 6px;font-size:19px}.cap{color:#5a6573;font-size:13px;margin:0 0 12px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:12px}
-.kpi{border:1px solid #e2e6eb;border-radius:8px;padding:14px}.kpi b{font-size:30px;color:#0B4F8A;display:block}.kpi.warn b{color:#c47f00}.kpi span{font-weight:600}.kpi small{display:block;color:#5a6573}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
-.cw{position:relative;height:340px}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e8ebef}th{background:#f0f3f7}
-.seg{display:inline-flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}.seg button{border:1px solid #c9d1db;background:#fff;padding:6px 12px;border-radius:6px;cursor:pointer}.seg button.on{background:#0B4F8A;color:#fff;border-color:#0B4F8A}
-.bar{display:grid;grid-template-columns:190px 1fr 70px;gap:8px;align-items:center;font-size:13px;margin:5px 0}.bl span{display:block;color:#7a8592;font-size:11px}.bt{background:#eef1f5;border-radius:4px;height:14px}.bf{background:#1F9BC7;height:100%;border-radius:4px}.bv{text-align:right;font-weight:600}
-#map path:hover{fill-opacity:.9}
-footer{text-align:center;color:#7a8592;font-size:12px;padding:10px 0 30px}
-@media(max-width:800px){.kpis{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
-</style><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script></head><body>
-<header><h1>Round Hill Water System — Asset Age &amp; Replacement Forecast</h1><p>Life-cycle replacement need for mains, hydrants, valves, meters and service lines, 2026–2100, in 2026 dollars.</p></header>
-<main>
-<section><h2>Headline figures</h2><p class="cap">Planning-level estimates from 2025 regional bid unit costs, construction cost only.</p>
-<div class="kpis"><div class="kpi"><b>$47.2M</b><span>Replacement value</span><small>5,163 assets incl. 34.6 mi of main</small></div><div class="kpi warn"><b>$1.2M</b><span>Backlog today</span><small>Assets past expected life</small></div><div class="kpi"><b>$1.3M</b><span>Next 10 years</span><small>2027–2036</small></div><div class="kpi"><b>$3.5M</b><span>Next 20 years</span><small>2027–2046</small></div></div></section>
-<section><h2>Replacement cost over time</h2><p class="cap">$ thousands per 5-year period; renewals repeat each life cycle. 2026–29 includes the current backlog.</p><div class="seg" id="segCost"></div><div class="cw" style="height:380px"><canvas id="cost"></canvas></div><p>Near-term need is led by hydrants, valves and service lines. The large main replacement wave arrives after 2080, which leaves time to build reserves now.</p></section>
-<section><h2>Value by asset type</h2><div class="grid"><div id="typeBars"></div><table id="typeTbl"></table></div></section>
-<section><h2>Subdivision map</h2><div class="grid"><svg id="map" width="100%" viewBox="-10 -10 640 720" role="img" aria-label="Map of Round Hill water assets by subdivision"></svg><table id="mapTbl"></table></div></section>
-<section><h2>Value and age by subdivision</h2><div class="seg" id="segSub"></div><div class="grid"><div id="subBars"></div><table id="subTbl"></table></div></section>
-<section><h2>Age and remaining life</h2><div class="grid"><div class="cw"><canvas id="decade"></canvas></div><div class="cw"><canvas id="pie"></canvas></div></div><p>Most of the system was built after 1990, so 72% of replacement value has more than 40 years of life left.</p></section>
-<section><h2>Method</h2><table id="method"></table><p class="cap" style="margin-top:10px">Sources: Town plan records and as-built drawings; Round Hill Water System Planning Study (2015); AWWA and EPA asset management guidance; 2025 regional bid tabulations.</p></section>
-</main><footer>Prepared by Bowman Consulting — Phil Weser, GIS Manager</footer>
-<script>
-const SERIES=["Water Main","Service Line","Hydrant","Valve","Meter"];
-const BINS=[["2026–29",72,123,850,364,22],["2030–34",0,38,65,592,0],["2035–39",384,50,20,238,0],["2040–44",780,141,15,836,0],["2045–49",276,38,235,0,0],["2050–54",996,50,220,399,0],["2055–59",0,141,1205,427,183],["2060–64",444,38,2140,0,0],["2065–69",552,50,870,364,0],["2070–74",0,141,1200,592,1039],["2075–79",72,38,1420,238,423],["2080–84",0,50,840,836,2214],["2085–89",384,141,850,0,48],["2090–94",780,38,65,399,5413],["2095–99",276,50,20,427,2215]];
-const IDX={Hydrant:1,Meter:2,"Service Line":3,Valve:4,"Water Main":5};
-const NAME={HE:"Hillwood Estates",RW:"Old Town West",SC:"Mystic Lane",WP:"Evening Star",SL:"Stoneleigh",VS:"The Villages South",VN:"The Villages North",FP:"Falls Place",GC:"Greenwood Commons",NC:"Newberry Crossing",LP:"Lake Pointe",FH:"Falls Wood",RE:"Old Town East",WL:"West Lakes",MV:"Mountain Valley Estates",CS:"Creekside",WR:"Walraven",UL:"Upper Lakes"};
-const SUBS=[["HE",185,1446,57],["RW",338,2822,40],["SC",14,340,36],["WP",75,1095,32],["SL",448,6374,30],["VS",566,3849,26],["VN",410,3673,24],["FP",67,379,23],["GC",118,863,22],["NC",96,746,22],["LP",800,5784,14],["FH",170,1909,14],["RE",425,4251,14],["WL",41,1235,13],["MV",599,4601,12],["CS",304,2323,8],["WR",16,437,8],["UL",417,3906,7]];
-const SUBCOL={CS:"#1f77b4",FH:"#aec7e8",FP:"#ff7f0e",GC:"#ffbb78",HE:"#2ca02c",LP:"#98df8a",MV:"#d62728",NC:"#ff9896",RE:"#9467bd",RW:"#c5b0d5",SC:"#8c564b",SL:"#c49c94",UL:"#e377c2",VN:"#f7b6d2",VS:"#7f7f7f",WL:"#bcbd22",WP:"#dbdb8d",WR:"#17becf"};
-const HULLS = [["CS","M375,112L377,102L389,102L395,94L408,97L448,95L439,138L448,145L463,147L465,154L459,171L453,176L440,175L425,164L418,153L404,151L400,141L388,138L385,121L375,112ZM432,208L428,205L429,198L447,189L447,194L432,208ZM399,184L400,175L403,174L418,184L399,184Z",413,134],["FH","M264,358L262,349L271,339L311,323L325,323L331,313L349,331L364,329L368,332L366,336L347,337L337,344L329,357L336,371L326,372L319,379L306,383L293,378L290,365L264,358Z",300,346],["FP","M446,295L438,273L457,259L472,278L473,286L452,298L446,295Z",457,280],["GC","M336,113L351,98L359,100L364,130L377,143L389,146L388,155L361,149L352,153L345,150L345,140L339,130L342,121L336,113Z",352,125],["HE","M322,146L318,114L329,102L337,105L339,112L336,130L340,150L358,148L363,154L384,160L400,146L402,169L391,174L387,184L374,185L372,200L330,201L324,165L327,152L322,146Z",344,165],["LP","M496,370L493,358L505,352L519,308L505,295L498,281L508,283L516,278L544,239L555,234L577,237L582,246L599,251L590,275L552,325L539,365L546,377L512,382L505,372L496,370Z",542,306],["MV","M277,28L265,12L287,0L323,6L351,4L356,24L370,29L377,26L391,28L392,37L374,34L365,44L358,35L328,33L314,26L298,25L291,37L332,68L340,65L336,53L341,51L350,63L349,72L359,84L366,80L361,70L364,66L371,78L393,80L399,87L399,99L395,101L365,88L360,92L360,100L353,105L335,101L328,104L288,104L284,92L286,75L274,50L277,28Z",294,52],["NC","M470,243L503,242L508,247L497,272L498,283L493,282L492,273L473,257L470,243Z",491,263],["RE","M396,364L401,345L387,332L391,329L398,334L405,330L411,324L412,313L417,315L412,324L417,332L427,332L433,323L445,330L444,336L413,346L403,360L403,367L416,378L440,382L455,390L465,382L473,387L471,406L481,413L476,434L465,434L460,417L448,420L415,413L404,416L385,405L384,399L395,395L398,378L388,370L396,364ZM420,290L418,276L404,267L398,221L397,207L402,201L404,182L397,163L404,157L408,160L408,181L413,192L428,202L441,202L446,219L455,224L450,232L452,238L464,236L468,242L478,245L474,250L462,250L463,270L458,270L453,259L448,258L427,273L428,284L420,290Z",425,235],["RW","M337,267L346,255L358,253L361,247L352,226L355,202L380,198L388,188L384,175L401,158L406,189L404,208L409,215L405,235L416,296L400,304L396,312L376,315L365,303L354,304L353,291L336,284L337,267Z",382,260],["SC","M319,290L307,288L306,273L314,281L333,287L342,300L352,303L361,301L363,305L340,311L319,290Z",332,296],["SL","M197,474L209,473L215,456L224,453L228,445L263,444L281,434L289,420L300,417L301,404L309,403L320,411L317,416L302,414L305,436L283,444L275,488L235,490L227,484L234,476L265,477L271,460L266,454L230,462L217,476L223,485L215,498L210,495L211,485L201,482L197,474ZM279,419L265,425L260,423L264,414L259,405L271,394L275,399L267,403L266,411L277,414L279,419ZM134,465L136,461L148,461L158,452L155,428L172,411L165,395L159,394L153,401L150,395L159,394L167,387L177,404L187,406L203,396L211,375L217,375L225,390L218,397L218,403L228,413L239,414L239,419L220,416L212,407L191,420L180,420L176,429L164,439L162,450L170,457L165,474L141,474L134,465ZM20,466L5,466L0,455L17,450L22,458L38,460L38,483L46,489L60,490L60,494L49,496L45,503L50,528L58,536L78,533L90,515L103,532L114,532L117,541L123,542L152,527L152,520L143,517L142,513L161,507L163,501L153,489L157,486L166,489L174,496L176,506L169,536L146,549L138,546L130,551L126,569L134,572L147,585L165,589L194,574L204,575L216,549L221,547L225,552L219,564L224,574L192,598L183,597L169,603L130,595L121,588L117,566L102,551L100,539L55,549L36,535L31,522L16,528L13,515L27,518L31,506L24,497L11,497L10,484L19,482L23,476L20,466ZM91,512L83,500L75,505L72,513L67,512L76,493L71,484L99,472L110,485L106,488L99,484L94,486L96,506L91,512ZM41,458L65,435L59,425L64,417L62,406L73,410L97,401L102,411L118,417L116,422L98,426L77,421L73,443L65,446L62,453L41,458Z",130,520],["UL","M441,585L432,536L423,528L436,527L447,516L459,514L467,504L467,485L460,453L468,446L499,475L472,505L468,515L447,531L448,542L460,553L451,565L452,575L459,580L471,580L479,576L485,566L503,571L516,583L504,618L497,625L497,634L490,643L490,678L478,696L466,697L442,691L445,670L440,649L456,649L454,632L462,626L478,635L488,628L477,616L475,586L441,585Z",492,600],["VN","M399,40L395,35L383,35L382,30L402,28L411,35L420,29L426,38L439,43L449,39L461,45L461,55L483,88L481,101L471,113L468,143L456,144L449,136L447,126L455,96L452,91L427,89L411,93L404,102L399,101L402,81L397,57L399,40Z",441,70],["VS","M461,175L467,165L464,157L470,150L467,141L474,134L471,126L476,118L474,109L480,104L490,106L514,126L518,140L514,174L520,204L519,214L511,225L503,224L501,218L507,206L503,197L471,203L466,214L461,214L465,181L461,175Z",489,168],["WL","M464,449L461,392L467,387L468,411L488,417L502,437L480,434L475,431L479,422L472,420L468,425L472,431L468,438L470,448L464,449Z",490,425],["WP","M476,92L470,75L478,50L489,49L500,61L513,60L513,69L503,75L502,86L489,81L484,91L476,92ZM422,34L438,18L448,26L449,36L461,48L454,53L443,35L433,33L425,37L422,34Z",492,70],["WR","M335,225L328,233L326,228L335,225L339,217L359,220L360,230L355,237L350,236L346,224L335,225ZM212,232L205,232L208,215L212,218L212,232Z",215,224]];
+:root{
+  color-scheme: dark;
+  --paper:#0F1A20; --sheet:#16242C; --sheet-2:#1C2D36; --ink:#E7EEEB; --ink-2:#A4B3B0; --rule:#2B3D46; --track:#22333C;
+  --main:#5B9BE0; --service:#38B6D9; --hydrant:#E8B03D; --valve:#6CCB98; --meter:#9AA7B4;
+  --alert:#F0524F; --good:#3CC46A; --focus:#4C91EC;
+  --scale-lo:#22404E; --scale-hi:#5B9BE0;
+  --c-past:#F0524F; --c-poor:#EE8A3A; --c-fair:#CDB75A; --c-good:#2FA463; --c-none:#66767C;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper); color:var(--ink); font:400 16px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px; margin:0 auto; padding:40px 24px 64px}
+header{display:flex; flex-wrap:wrap; gap:16px 32px; align-items:flex-end; justify-content:space-between; margin-bottom:28px}
+h1{font-size:clamp(28px,4vw,42px); line-height:1.08; font-weight:800; letter-spacing:-0.02em; margin:0 0 10px; max-width:22ch}
+.lede{margin:0; color:var(--ink-2); max-width:62ch}
+.asof{color:var(--ink-2); font-size:14px; text-align:right}
+button{font:600 14px/1 "Public Sans", system-ui, sans-serif; color:var(--ink); background:var(--sheet); border:1.5px solid var(--rule); border-radius:6px; padding:9px 14px; cursor:pointer}
+button:hover{border-color:var(--ink-2)}
+button:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+.asof button{margin-top:8px}
+.notice{background:var(--sheet-2); border:1px solid var(--rule); border-radius:8px; padding:12px 16px; margin:0 0 24px; font-size:14px; color:var(--ink-2)}
+.notice b{color:var(--ink)}
+.notice[hidden]{display:none}
 
-const PAL=["#0B4F8A","#1F9BC7","#E0A526","#5BB98C","#8C98A6"];
-const usd=k=>k>=1000?`$${(k/1000).toFixed(1)}M`:`$${Math.round(k)}K`;
-const $=s=>document.querySelector(s);
-const tbl=(el,cols,rows)=>{el.innerHTML='<thead><tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')+'</tbody>';};
-const bars=(el,items)=>{const m=Math.max(...items.map(i=>i.v));el.innerHTML=items.map(i=>`<div class="bar"><div class="bl">${i.l}<span>${i.m||''}</span></div><div class="bt"><div class="bf" style="width:${100*i.v/m}%"></div></div><div class="bv">${i.d}</div></div>`).join('');};
-const seg=(el,opts,cb)=>{el.innerHTML=opts.map((o,i)=>`<button data-v="${o[0]}" class="${i?'':'on'}">${o[1]}</button>`).join('');el.onclick=e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.v);};};
-Chart.defaults.font.family='system-ui,Segoe UI,Roboto,sans-serif';
-const tt={callbacks:{label:c=>`${c.dataset.label}: ${usd(c.parsed.y)}`}};
-const cost=new Chart($('#cost'),{type:'bar',data:{labels:BINS.map(b=>b[0]),datasets:SERIES.map((n,i)=>({label:n,data:BINS.map(b=>b[IDX[n]]),backgroundColor:PAL[i]}))},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:tt},scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>usd(v)}}}}});
-seg($('#segCost'),[["All","All assets"],...SERIES.map(s=>[s,s])],v=>{cost.data.datasets.forEach(d=>d.hidden=!(v==="All"||d.label===v));cost.update();});
-bars($('#typeBars'),[["Water mains",31396,"$31.4M","411 segments, 34.6 mi"],["Service lines",9080,"$9.1M","1,816"],["Hydrants",3576,"$3.6M","298"],["Valves",2889,"$2.9M","777"],["Meters",229,"$0.2M","1,861"]].map(a=>({l:a[0],v:a[1],d:a[2],m:a[3]})));
-tbl($('#typeTbl'),["Asset","Count","Value","Backlog","Useful life"],[["Water mains","411","$31.4M","$22K","75–110 yrs by material"],["Service lines","1,816","$9.1M","$750K","60 yrs"],["Hydrants","298","$3.6M","$72K","50 yrs"],["Valves","777","$2.9M","$364K","40 yrs"],["Meters","1,861","$0.2M","$34K","15 yrs"]]);
-const svg=$('#map');let s='';HULLS.forEach(h=>s+=`<path data-c="${h[0]}" d="${h[1]}" fill="${SUBCOL[h[0]]}" fill-opacity=".55" stroke="#667" stroke-width=".5"><title>${NAME[h[0]]}</title></path>`);HULLS.forEach(h=>s+=`<text x="${h[2]}" y="${h[3]}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="600" fill="#1b2430" pointer-events="none">${NAME[h[0]]}</text>`);svg.innerHTML=s;
-tbl($('#mapTbl'),["Subdivision","Assets","Value"],[...SUBS].sort((a,b)=>NAME[a[0]].localeCompare(NAME[b[0]])).map(x=>[`<span style="color:${SUBCOL[x[0]]}">■</span> ${NAME[x[0]]}`,x[1],usd(x[2])]));
-const drawSubs=k=>{const r=[...SUBS].sort((a,b)=>k==="age"?b[3]-a[3]:b[2]-a[2]);bars($('#subBars'),r.map(x=>({l:NAME[x[0]],v:x[3],d:x[3]+' yrs',m:usd(x[2])})));tbl($('#subTbl'),["Subdivision","Assets","Value","Median age"],r.map(x=>[NAME[x[0]],x[1],usd(x[2]),x[3]+' yrs']));};
-seg($('#segSub'),[["age","By age"],["value","By value"]],drawSubs);drawSubs("age");
-new Chart($('#decade'),{type:'bar',data:{labels:["Pre-1960","1960s","1970s","1980s","1990s","2000s","2010s","2020s","Not dated"],datasets:[{label:"Replacement value by install decade",data:[440,1480,2510,2010,12200,12610,14000,910,1010],backgroundColor:PAL[0]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:tt},scales:{y:{ticks:{callback:v=>usd(v)}}}}});
-new Chart($('#pie'),{type:'doughnut',data:{labels:["Due within 10 years","10–40 years","40+ years","Not dated"],datasets:[{data:[2532,9608,34021,1010],backgroundColor:PAL.slice(0,4)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Remaining useful life — total $47.2M'},tooltip:{callbacks:{label:c=>`${c.label}: ${usd(c.parsed)}`}}}}});
-tbl($('#method'),["Step","Approach"],[["Install years","Plan records, as-built drawings and construction records by subdivision and phase"],["Useful life","AWWA ranges for mains by material; EPA small-system ranges for hydrants, valves and meters"],["Unit costs","2025 regional bid tabulations: mains $120–260/LF by diameter, hydrants $12,000, valves $1,500–7,000"],["Forecast","Backlog counted in 2026; each asset renews every life cycle through 2100; 2026 dollars"]]);
-</script></body></html>
+.kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:10px; overflow:hidden; margin-bottom:28px}
+.kpi{background:var(--sheet); padding:20px 20px 18px}
+.kpi .v{display:block; font-size:clamp(26px,3vw,36px); font-weight:800; letter-spacing:-0.02em; line-height:1.1}
+.kpi .l{display:block; font-weight:600; margin-top:6px}
+.kpi .d{display:block; color:var(--ink-2); font-size:13px; margin-top:2px}
+.kpi.alert .v{color:var(--alert)}
+.kpi.steady{background:var(--sheet-2)}
+
+section{background:var(--sheet); border:1px solid var(--rule); border-radius:10px; padding:24px 28px; margin-bottom:28px}
+section h2{font-size:22px; font-weight:700; margin:0 0 4px; letter-spacing:-0.01em}
+.note{margin:0 0 18px; color:var(--ink-2); font-size:14px; max-width:72ch}
+.takeaway{margin:16px 0 0; max-width:72ch}
+.row{display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:flex-start}
+.seg{display:inline-flex; flex-wrap:wrap; border:1.5px solid var(--rule); border-radius:6px; overflow:hidden}
+.seg button{border:0; border-radius:0; border-left:1.5px solid var(--rule); background:transparent; padding:8px 12px}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.chart{position:relative; height:360px}
+.chart.short{height:300px}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start}
+
+.bars{display:flex; flex-direction:column; gap:10px}
+.bar{display:grid; grid-template-columns:170px 1fr 74px; gap:12px; align-items:center; font-size:14px}
+.bar .lab b{display:block; font-weight:600}
+.bar .lab span{display:block; color:var(--ink-2); font-size:12px}
+.bar .tr{background:var(--track); height:16px; border-radius:4px; overflow:hidden}
+.bar .fi{height:100%; border-radius:4px}
+.bar .val{text-align:right; font-weight:700}
+
+.tablewrap{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:14px}
+th{text-align:left; font-weight:600; color:var(--ink-2); padding:8px 10px; border-bottom:1.5px solid var(--rule); white-space:nowrap}
+td{padding:8px 10px; border-bottom:1px solid var(--rule); white-space:nowrap}
+.num{text-align:right}
+.sw{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:8px; vertical-align:0}
+.up{color:var(--alert)} .flat{color:var(--ink-2)}
+
+#map{width:100%; height:auto; display:block}
+#map path{stroke:var(--paper); stroke-width:1; cursor:default}
+#map path:hover{stroke:var(--ink); stroke-width:1.5}
+#map text{fill:var(--ink); font:600 13px "Public Sans", system-ui, sans-serif; paint-order:stroke; stroke:var(--paper); stroke-width:3px; pointer-events:none}
+.legend-scale{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--ink-2); margin-top:8px}
+.legend-scale .ramp{flex:0 0 160px; height:10px; border-radius:3px; background:linear-gradient(90deg,var(--scale-lo),var(--scale-hi))}
+
+.cond{display:flex; flex-direction:column; gap:12px}
+.cond .r{display:grid; grid-template-columns:110px 1fr; gap:12px; align-items:center; font-size:14px}
+.stack{display:flex; height:22px; border-radius:4px; overflow:hidden; background:var(--track)}
+.stack span{height:100%}
+.keys{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--ink-2); margin-top:14px}
+
+.conf{display:grid; grid-template-columns:repeat(5,1fr); gap:12px}
+.conf div{background:var(--sheet-2); border-radius:8px; padding:14px}
+.conf b{display:block; font-size:26px; font-weight:800}
+.conf span{display:block; font-size:13px; color:var(--ink-2)}
+a{color:var(--focus)}
+a:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+.basis{font-size:13px; color:var(--ink-2); margin:14px 0 0; padding-left:18px; max-width:90ch}
+.basis li{margin:4px 0}
+#methodTbl td{white-space:normal}
+#methodTbl td:first-child{white-space:nowrap; font-weight:600}
+footer{color:var(--ink-2); font-size:13px}
+
+@media (max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} .kpi.steady{grid-column:1 / -1} .grid2{grid-template-columns:1fr} .conf{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:600px){ .wrap{padding:28px 16px 48px} section{padding:20px 16px} .bar{grid-template-columns:120px 1fr 64px} .asof{text-align:left} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Round Hill water system: asset age and replacement forecast</h1>
+      <p class="lede">Life-cycle replacement need for mains, hydrants, valves, meters and service lines through 2100, in 2026 dollars. Counts and ages update from the town's GIS each time this page loads.</p>
+    </div>
+    <div class="asof">
+      <div id="asof">Loading&hellip;</div>
+      <button id="refresh" type="button">Refresh data</button>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="kpis" id="kpis" aria-live="polite"></div>
+
+  <section>
+    <div class="row">
+      <div>
+        <h2>Replacement cost over time</h2>
+        <p class="note">Cost per 5-year period. Assets renew each time they reach the end of their useful life. The first period includes today's backlog. The dashed line is the steady funding level that would cover every renewal over time.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Asset type" id="segCost"></div>
+    </div>
+    <div class="chart"><canvas id="costChart" aria-label="Replacement cost by 5-year period and asset type"></canvas></div>
+    <p class="takeaway" id="costTake"></p>
+  </section>
+
+  <section>
+    <h2>Value by asset type</h2>
+    <p class="note" id="typeNote">Replacement value at 2026 unit prices, with the change from the previous prices.</p>
+    <div class="grid2">
+      <div class="bars" id="typeBars"></div>
+      <div class="tablewrap"><table id="typeTbl"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row">
+      <div>
+        <h2>Subdivision map</h2>
+        <p class="note">Shade each subdivision by the measure you choose. Hover a subdivision for its name.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Map measure" id="segMap"></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <svg id="map" viewBox="-10 -10 640 720" role="img" aria-label="Map of Round Hill water assets by subdivision"></svg>
+        <div class="legend-scale"><span id="lgLo"></span><span class="ramp"></span><span id="lgHi"></span></div>
+      </div>
+      <div class="tablewrap"><table id="mapTbl"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row">
+      <div>
+        <h2>Value and age by subdivision</h2>
+        <p class="note">Median asset age and replacement value for each subdivision.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Sort subdivisions" id="segSub"></div>
+    </div>
+    <div class="grid2">
+      <div class="bars" id="subBars"></div>
+      <div class="tablewrap"><table id="subTbl"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Age and remaining life</h2>
+    <p class="note">Replacement value by the decade each asset was installed, and by how much useful life it has left.</p>
+    <div class="grid2">
+      <div class="chart short"><canvas id="decadeChart" aria-label="Replacement value by install decade"></canvas></div>
+      <div class="chart short"><canvas id="lifeChart" aria-label="Replacement value by remaining useful life"></canvas></div>
+    </div>
+    <p class="takeaway" id="ageTake"></p>
+  </section>
+
+  <section>
+    <h2>Condition by asset type</h2>
+    <p class="note">Share of each asset type's replacement value by how much of its useful life remains. Age-based, not a field condition rating.</p>
+    <div class="cond" id="cond"></div>
+    <div class="keys" id="condKeys"></div>
+  </section>
+
+  <section>
+    <h2>How complete is the data</h2>
+    <p class="note">The forecast is only as good as the install dates behind it. Assets without a date are valued but left out of the forecast.</p>
+    <div class="conf" id="conf"></div>
+    <div class="tablewrap" style="margin-top:18px"><table id="confTbl"></table></div>
+    <p class="note" style="margin:14px 0 0" id="maintLink"></p>
+  </section>
+
+  <section>
+    <div class="row">
+      <div>
+        <h2>Method and unit prices</h2>
+        <p class="note">Unit prices and useful lives come from <code>data/unit_prices.csv</code>. Edit that file and this page recalculates on its next load.</p>
+      </div>
+      <button type="button" id="csvBtn">Download asset costs (CSV)</button>
+    </div>
+    <div class="tablewrap"><table id="priceTbl"></table></div>
+    <ul class="basis" id="basis"></ul>
+    <div class="tablewrap" style="margin-top:18px"><table id="methodTbl"></table></div>
+  </section>
+
+  <footer>Prepared by Bowman Consulting, Phil Weser, GIS Manager. Planning-level construction cost estimates, not engineering estimates for a specific project.</footer>
+</div>
+
+<script>
+// ------------- Settings -------------
+const SERVICE = "https://services3.arcgis.com/3WQsNEWSVGwHihXP/arcgis/rest/services/Water_Management_Layer_2_view/FeatureServer";
+const CONFIG = {
+  layers: [
+    { type: "Meter",        url: SERVICE + "/0", expect: /meter/i },
+    { type: "Hydrant",      url: SERVICE + "/1", expect: /hydrant/i },
+    { type: "Valve",        url: SERVICE + "/2", expect: /valve/i },
+    { type: "Water Main",   url: SERVICE + "/3", expect: /main/i },
+    { type: "Service Line", url: SERVICE + "/4", expect: /service/i }
+  ],
+  pricesUrl: "data/unit_prices.csv",
+  baselineUrl: "data/assets_baseline.csv",
+  maintenanceUrl: "https://mindchapter-lab.github.io/rh_asset/",
+  horizon: 2099
+};
+// ------------------------------------
+
+const SUB_NAME={HE:"Hillwood Estates",RW:"Old Town West",SC:"Mystic Lane",WP:"Evening Star",SL:"Stoneleigh",VS:"The Villages South",VN:"The Villages North",FP:"Falls Place",GC:"Greenwood Commons",NC:"Newberry Crossing",LP:"Lake Pointe",FH:"Falls Wood",RE:"Old Town East",WL:"West Lakes",MV:"Mountain Valley Estates",CS:"Creekside",WR:"Walraven",UL:"Upper Lakes"};
+const HULLS=[["CS","M375,112L377,102L389,102L395,94L408,97L448,95L439,138L448,145L463,147L465,154L459,171L453,176L440,175L425,164L418,153L404,151L400,141L388,138L385,121L375,112ZM432,208L428,205L429,198L447,189L447,194L432,208ZM399,184L400,175L403,174L418,184L399,184Z",413,134],["FH","M264,358L262,349L271,339L311,323L325,323L331,313L349,331L364,329L368,332L366,336L347,337L337,344L329,357L336,371L326,372L319,379L306,383L293,378L290,365L264,358Z",300,346],["FP","M446,295L438,273L457,259L472,278L473,286L452,298L446,295Z",457,280],["GC","M336,113L351,98L359,100L364,130L377,143L389,146L388,155L361,149L352,153L345,150L345,140L339,130L342,121L336,113Z",352,125],["HE","M322,146L318,114L329,102L337,105L339,112L336,130L340,150L358,148L363,154L384,160L400,146L402,169L391,174L387,184L374,185L372,200L330,201L324,165L327,152L322,146Z",344,165],["LP","M496,370L493,358L505,352L519,308L505,295L498,281L508,283L516,278L544,239L555,234L577,237L582,246L599,251L590,275L552,325L539,365L546,377L512,382L505,372L496,370Z",542,306],["MV","M277,28L265,12L287,0L323,6L351,4L356,24L370,29L377,26L391,28L392,37L374,34L365,44L358,35L328,33L314,26L298,25L291,37L332,68L340,65L336,53L341,51L350,63L349,72L359,84L366,80L361,70L364,66L371,78L393,80L399,87L399,99L395,101L365,88L360,92L360,100L353,105L335,101L328,104L288,104L284,92L286,75L274,50L277,28Z",294,52],["NC","M470,243L503,242L508,247L497,272L498,283L493,282L492,273L473,257L470,243Z",491,263],["RE","M396,364L401,345L387,332L391,329L398,334L405,330L411,324L412,313L417,315L412,324L417,332L427,332L433,323L445,330L444,336L413,346L403,360L403,367L416,378L440,382L455,390L465,382L473,387L471,406L481,413L476,434L465,434L460,417L448,420L415,413L404,416L385,405L384,399L395,395L398,378L388,370L396,364ZM420,290L418,276L404,267L398,221L397,207L402,201L404,182L397,163L404,157L408,160L408,181L413,192L428,202L441,202L446,219L455,224L450,232L452,238L464,236L468,242L478,245L474,250L462,250L463,270L458,270L453,259L448,258L427,273L428,284L420,290Z",425,235],["RW","M337,267L346,255L358,253L361,247L352,226L355,202L380,198L388,188L384,175L401,158L406,189L404,208L409,215L405,235L416,296L400,304L396,312L376,315L365,303L354,304L353,291L336,284L337,267Z",382,260],["SC","M319,290L307,288L306,273L314,281L333,287L342,300L352,303L361,301L363,305L340,311L319,290Z",332,296],["SL","M197,474L209,473L215,456L224,453L228,445L263,444L281,434L289,420L300,417L301,404L309,403L320,411L317,416L302,414L305,436L283,444L275,488L235,490L227,484L234,476L265,477L271,460L266,454L230,462L217,476L223,485L215,498L210,495L211,485L201,482L197,474ZM279,419L265,425L260,423L264,414L259,405L271,394L275,399L267,403L266,411L277,414L279,419ZM134,465L136,461L148,461L158,452L155,428L172,411L165,395L159,394L153,401L150,395L159,394L167,387L177,404L187,406L203,396L211,375L217,375L225,390L218,397L218,403L228,413L239,414L239,419L220,416L212,407L191,420L180,420L176,429L164,439L162,450L170,457L165,474L141,474L134,465ZM20,466L5,466L0,455L17,450L22,458L38,460L38,483L46,489L60,490L60,494L49,496L45,503L50,528L58,536L78,533L90,515L103,532L114,532L117,541L123,542L152,527L152,520L143,517L142,513L161,507L163,501L153,489L157,486L166,489L174,496L176,506L169,536L146,549L138,546L130,551L126,569L134,572L147,585L165,589L194,574L204,575L216,549L221,547L225,552L219,564L224,574L192,598L183,597L169,603L130,595L121,588L117,566L102,551L100,539L55,549L36,535L31,522L16,528L13,515L27,518L31,506L24,497L11,497L10,484L19,482L23,476L20,466ZM91,512L83,500L75,505L72,513L67,512L76,493L71,484L99,472L110,485L106,488L99,484L94,486L96,506L91,512ZM41,458L65,435L59,425L64,417L62,406L73,410L97,401L102,411L118,417L116,422L98,426L77,421L73,443L65,446L62,453L41,458Z",130,520],["UL","M441,585L432,536L423,528L436,527L447,516L459,514L467,504L467,485L460,453L468,446L499,475L472,505L468,515L447,531L448,542L460,553L451,565L452,575L459,580L471,580L479,576L485,566L503,571L516,583L504,618L497,625L497,634L490,643L490,678L478,696L466,697L442,691L445,670L440,649L456,649L454,632L462,626L478,635L488,628L477,616L475,586L441,585Z",492,600],["VN","M399,40L395,35L383,35L382,30L402,28L411,35L420,29L426,38L439,43L449,39L461,45L461,55L483,88L481,101L471,113L468,143L456,144L449,136L447,126L455,96L452,91L427,89L411,93L404,102L399,101L402,81L397,57L399,40Z",432,62],["VS","M461,175L467,165L464,157L470,150L467,141L474,134L471,126L476,118L474,109L480,104L490,106L514,126L518,140L514,174L520,204L519,214L511,225L503,224L501,218L507,206L503,197L471,203L466,214L461,214L465,181L461,175Z",489,168],["WL","M464,449L461,392L467,387L468,411L488,417L502,437L480,434L475,431L479,422L472,420L468,425L472,431L468,438L470,448L464,449Z",490,425],["WP","M476,92L470,75L478,50L489,49L500,61L513,60L513,69L503,75L502,86L489,81L484,91L476,92ZM422,34L438,18L448,26L449,36L461,48L454,53L443,35L433,33L425,37L422,34Z",505,100],["WR","M335,225L328,233L326,228L335,225L339,217L359,220L360,230L355,237L350,236L346,224L335,225ZM212,232L205,232L208,215L212,218L212,232Z",215,224]];
+
+const TYPES = ["Water Main", "Service Line", "Hydrant", "Valve", "Meter"];
+const TVAR = { "Water Main": "--main", "Service Line": "--service", "Hydrant": "--hydrant", "Valve": "--valve", "Meter": "--meter" };
+const PLURAL = { "Water Main": "Water mains", "Service Line": "Service lines", "Hydrant": "Hydrants", "Valve": "Valves", "Meter": "Meters" };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = v => { const a = Math.abs(v); return a >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : a >= 1e3 ? `$${Math.round(v / 1e3)}K` : `$${Math.round(v)}`; };
+const fmt = v => Math.round(v).toLocaleString("en-US");
+const pct = (a, b) => b ? Math.round((a / b - 1) * 100) : 0;
+const median = arr => { if (!arr.length) return null; const s = [...arr].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+// ---------- CSV ----------
+function parseCSV(text) {
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  const head = rows.shift().map(h => h.trim());
+  return rows.filter(r => r.some(v => v !== "")).map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? "").trim()])));
+}
+async function getText(url) { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.text(); }
+async function getJSON(url, params) {
+  const r = await fetch(url + "?" + new URLSearchParams(params));
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json(); if (j.error) throw new Error(j.error.message || "service error"); return j;
+}
+
+// ---------- prices ----------
+let PRICES = [];
+const sizeNum = s => { const m = /^([\d.\/]+)\s*in/.exec(s || ""); if (!m) return null; const p = m[1].split("/"); return p.length === 2 ? +p[0] / +p[1] : +p[0]; };
+function priceRow(type, size, material) {
+  let rows = PRICES.filter(p => p.Asset === type);
+  if (!rows.length) return null;
+  if (type === "Water Main") {
+    const mm = rows.find(p => p.Material.toLowerCase() === String(material || "").toLowerCase());
+    const want = mm ? mm.Material : "Unknown";
+    rows = rows.filter(p => p.Material === want);
+  }
+  let hit = rows.find(p => p.Size === size);
+  if (!hit && sizeNum(size) != null) {
+    const n = sizeNum(size), sized = rows.filter(p => sizeNum(p.Size) != null);
+    if (sized.length) hit = sized.reduce((a, b) => Math.abs(sizeNum(b.Size) - n) < Math.abs(sizeNum(a.Size) - n) ? b : a);
+  }
+  if (hit) return hit;
+  const smallest = rows.filter(p => sizeNum(p.Size) != null).sort((a, b) => sizeNum(a.Size) - sizeNum(b.Size))[0];
+  return rows.find(p => /unknown/i.test(p.Size)) || rows.find(p => p.Size === "All") || smallest || rows[0];
+}
+
+// ---------- live GIS ----------
+const INACTIVE = /abandon|remov|retir|propos|approv|demol|inactive|out of service|planned|design/i;
+async function loadLive(layer) {
+  const meta = await getJSON(layer.url, { f: "json" });
+  if (layer.expect && !layer.expect.test(meta.name || "")) throw new Error(`layer is "${meta.name}", expected ${layer.type}`);
+  const F = meta.fields || [];
+  const find = re => F.find(f => re.test(f.name));
+  const gid = meta.globalIdField || (find(/^globalid$/i) || {}).name;
+  const oid = meta.objectIdField || "OBJECTID";
+  const dom = f => f && f.domain && f.domain.codedValues ? Object.fromEntries(f.domain.codedValues.map(c => [c.code, c.name])) : null;
+  const lc = find(/^lifecyclestatus$/i), lcDom = dom(lc);
+  const inst = F.find(f => /^install/i.test(f.name) || /install_?(date|year)|yearinstall/i.test(f.name));
+  const dia = find(/^diameter$/i), diaDom = dom(dia);
+  const mat = find(/^material$/i), matDom = dom(mat);
+  const sub = find(/^subdivision$/i);
+  const len = find(/^shape__length$/i);
+  const page = Math.min(meta.maxRecordCount || 1000, 2000), out = [];
+  for (let off = 0; ; off += page) {
+    const j = await getJSON(layer.url + "/query", { where: "1=1", outFields: "*", returnGeometry: "false", orderByFields: oid, resultOffset: off, resultRecordCount: page, f: "json" });
+    for (const ft of j.features || []) {
+      const a = ft.attributes;
+      if (lc && a[lc.name] != null && lcDom && INACTIVE.test(lcDom[a[lc.name]] || "")) continue;
+      let iy = null;
+      if (inst && a[inst.name] != null) {
+        const v = a[inst.name];
+        if (typeof v === "number" && v > 1800 && v < 2200) iy = v;
+        else if (typeof v === "number") iy = new Date(v).getUTCFullYear();
+        else if (typeof v === "string" && /^\d{4}/.test(v)) iy = +v.slice(0, 4);
+      }
+      let d = dia ? a[dia.name] : null; if (d != null && diaDom && /unknown/i.test(diaDom[d] || "")) d = null; if (d === 0) d = null;
+      let m = mat ? a[mat.name] : null; if (m != null && matDom) m = matDom[m] ?? m; if (m && /unknown/i.test(m)) m = null;
+      out.push({ id: String(a[gid] || "").replace(/[{}]/g, "").toLowerCase(), oid: a[oid], iy, dia: d, mat: m || null,
+                 sub: sub && a[sub.name] ? String(a[sub.name]).trim() : null, lenM: len ? a[len.name] : null });
+    }
+    if (!j.exceededTransferLimit || !(j.features || []).length) break;
+  }
+  return out;
+}
+
+const MATS = [[/^(di|dip|ductile)/i, "Ductile Iron"], [/^(ci|cip|cast)/i, "Cast Iron"], [/^(ac|acp|asbestos)/i, "Asbestos Cement"], [/^pvc|polyvinyl/i, "PVC"], [/^(gal|galv)/i, "Galvanized"], [/^(pp|polyprop)/i, "Polypropylene"]];
+const normMat = m => { if (!m) return ""; const hit = MATS.find(([re]) => re.test(String(m).trim())); return hit ? hit[1] : String(m).trim(); };
+// ---------- model ----------
+const S = { assets: [], Y: new Date().getFullYear(), live: {}, errors: {}, baseline: [], added: {}, retired: {} };
+function buildAssets(baseline, liveByType) {
+  const byId = new Map(baseline.map(b => [b.asset_id, b]));
+  const seen = new Set(), assets = [];
+  S.added = {}; S.retired = {};
+  const MERC = 3.28084 * Math.cos(39.14 * Math.PI / 180);
+  for (const t of TYPES) {
+    const live = liveByType[t];
+    S.added[t] = 0;
+    if (!live) { // fall back to baseline for this type
+      baseline.filter(b => b.asset_type === t).forEach(b => assets.push(fromBase(b, "baseline")));
+      continue;
+    }
+    for (const f of live) {
+      const b = byId.get(f.id); if (b) seen.add(f.id); else S.added[t]++;
+      let size = b ? b.size : "";
+      if (f.dia && (t === "Valve" || (t === "Water Main" && (!size || /unknown/i.test(size))))) size = `${f.dia} in`;
+      if (!size) size = t === "Water Main" || t === "Valve" ? "Unknown diameter" : (t === "Meter" ? "5/8 in" : "All");
+      const material = (b && b.material && !/unknown/i.test(b.material)) ? b.material : normMat(f.mat) || (b && b.material) || "";
+      const len = t === "Water Main" ? (b && b.length_ft ? +b.length_ft : (f.lenM ? f.lenM * MERC : 0)) : 0;
+      assets.push(makeAsset({ id: f.id, oid: f.oid, type: t, sub: f.sub || (b && b.subdivision) || "", material, size, len,
+                              iy: f.iy || (b && b.install_year ? +b.install_year : null), src: b ? "live" : "live (new)" }));
+    }
+    S.retired[t] = baseline.filter(b => b.asset_type === t && !seen.has(b.asset_id)).length;
+  }
+  return assets;
+}
+const fromBase = (b, src) => makeAsset({ id: b.asset_id, oid: +b.objectid, type: b.asset_type, sub: b.subdivision, material: b.material, size: b.size,
+                                         len: b.length_ft ? +b.length_ft : 0, iy: b.install_year ? +b.install_year : null, src });
+function makeAsset(x) {
+  const p = priceRow(x.type, x.size, x.material);
+  const qty = x.type === "Water Main" ? x.len : 1;
+  const life = p ? +p.Useful_Life_Years : 50, unit = p ? +p.Unit_Price : 0, prev = p ? +(p.Previous_Unit_Price || p.Unit_Price) : 0;
+  const cost = unit * qty, prevCost = prev * qty;
+  const due = x.iy ? x.iy + life : null;
+  const rem = x.iy ? Math.max(0, due - S.Y) : null;
+  return { ...x, life, unit, cost, prevCost, due, rem, age: x.iy ? S.Y - x.iy : null, backlog: x.iy != null && due <= S.Y, priceSize: p ? p.Size : "" };
+}
+function renewals(assets) {
+  const by = {}; for (let y = S.Y; y <= CONFIG.horizon; y++) by[y] = Object.fromEntries(TYPES.map(t => [t, 0]));
+  for (const a of assets) {
+    if (a.iy == null || !a.life) continue;
+    let y = a.due <= S.Y ? S.Y : a.due;
+    while (y <= CONFIG.horizon) { by[y][a.type] += a.cost; y += a.life; }
+  }
+  return by;
+}
+const sumYears = (by, a, b) => { let s = 0; for (let y = a; y <= b; y++) if (by[y]) s += TYPES.reduce((t, k) => t + by[y][k], 0); return s; };
+
+// ---------- charts ----------
+const charts = {};
+Chart.defaults.font.family = '"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+function chartOpts(stacked, money_) {
+  const ink2 = css("--ink-2"), rule = css("--rule");
+  return { responsive: true, maintainAspectRatio: false, animation: matchMedia("(prefers-reduced-motion: reduce)").matches ? false : { duration: 400 },
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: { position: "bottom", labels: { color: ink2, boxWidth: 12 } },
+               tooltip: { callbacks: { label: c => `${c.dataset.label}: ${money_ ? money(c.parsed.y ?? c.parsed) : c.formattedValue}` } } },
+    scales: { x: { stacked, ticks: { color: ink2, maxRotation: 0, autoSkipPadding: 10 }, grid: { display: false } },
+              y: { stacked, beginAtZero: true, ticks: { color: ink2, callback: v => money(v) }, grid: { color: rule } } } };
+}
+function draw(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), cfg); }
+function seg(id, opts, cur, cb) {
+  const el = $(id);
+  el.innerHTML = opts.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${k === cur}">${l}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); cb(b.dataset.k); });
+}
+function bars(el, items, colorVar) {
+  const m = Math.max(...items.map(i => i.v), 1);
+  $(el).innerHTML = items.map(i => `<div class="bar"><div class="lab"><b>${esc(i.l)}</b><span>${esc(i.m || "")}</span></div>
+    <div class="tr"><div class="fi" style="width:${100 * i.v / m}%;background:var(${i.c || colorVar})"></div></div><div class="val">${esc(i.d)}</div></div>`).join("");
+}
+function table(el, cols, rows) {
+  $(el).innerHTML = `<thead><tr>${cols.map(c => `<th class="${c.n ? "num" : ""}">${c.h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((v, i) => `<td class="${cols[i].n ? "num" : ""}">${v}</td>`).join("")}</tr>`).join("")}</tbody>`;
+}
+
+// ---------- render ----------
+function render() {
+  const A = S.assets, Y = S.Y, by = renewals(A);
+  const total = A.reduce((s, a) => s + a.cost, 0), prevTotal = A.reduce((s, a) => s + a.prevCost, 0);
+  const backlog = A.filter(a => a.backlog).reduce((s, a) => s + a.cost, 0);
+  const n10 = sumYears(by, Y + 1, Y + 10), n20 = sumYears(by, Y + 1, Y + 20);
+  const steady = A.reduce((s, a) => s + (a.life ? a.cost / a.life : 0), 0);
+  const miles = A.filter(a => a.type === "Water Main").reduce((s, a) => s + a.len, 0) / 5280;
+  const ch = pct(total, prevTotal);
+  $("#kpis").innerHTML = [
+    ["", money(total), "Replacement value", `${fmt(A.length)} assets incl. ${miles.toFixed(1)} mi of main. ${ch >= 0 ? "+" : ""}${ch}% from previous prices`],
+    ["alert", money(backlog), "Backlog today", "Assets past expected life"],
+    ["", money(n10), "Next 10 years", `${Y + 1} to ${Y + 10}`],
+    ["", money(n20), "Next 20 years", `${Y + 1} to ${Y + 20}`],
+    ["steady", money(steady), "Steady annual need", "Value divided by useful life, per year"]
+  ].map(([c, v, l, d]) => `<div class="kpi ${c}"><span class="v">${v}</span><span class="l">${l}</span><span class="d">${d}</span></div>`).join("");
+
+  // cost over time
+  const bins = []; let start = Y, end = Y - (Y % 5) + 4;
+  while (start <= CONFIG.horizon) { bins.push([start, Math.min(end, CONFIG.horizon)]); start = end + 1; end = start + 4; }
+  const lab = b => `${b[0]}–${String(b[1]).slice(2)}`;
+  const binVal = (b, t) => { let s = 0; for (let y = b[0]; y <= b[1]; y++) s += by[y][t]; return s; };
+  const drawCost = sel => {
+    const ds = TYPES.map(t => ({ type: "bar", label: t, data: bins.map(b => binVal(b, t)), backgroundColor: css(TVAR[t]), hidden: !(sel === "All" || sel === t), stack: "s" }));
+    const steadyFor = sel === "All" ? steady : A.filter(a => a.type === sel).reduce((s, a) => s + (a.life ? a.cost / a.life : 0), 0);
+    ds.push({ type: "line", label: "Steady funding level", data: bins.map(b => steadyFor * (b[1] - b[0] + 1)), borderColor: css("--ink"), borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0, stepped: "middle" });
+    draw("costChart", { data: { labels: bins.map(lab), datasets: ds }, options: chartOpts(true, true) });
+  };
+  seg("#segCost", [["All", "All assets"], ...TYPES.map(t => [t, PLURAL[t]])], "All", drawCost); drawCost("All");
+  const peak = bins.map(b => [b, TYPES.reduce((s, t) => s + binVal(b, t), 0)]).sort((a, b) => b[1] - a[1])[0];
+  const steady10 = steady * 10;
+  $("#costTake").textContent = `The next 10 years need ${money(n10)}, ${n10 < steady10 ? "below" : "above"} the ${money(steady10)} a steady program would set aside over the same period. The largest period is ${lab(peak[0])} at ${money(peak[1])}${n10 < steady10 ? ", so building reserves now smooths that peak." : "."}`;
+
+  // by type
+  const tRows = TYPES.map(t => {
+    const x = A.filter(a => a.type === t);
+    return { t, n: x.length, v: x.reduce((s, a) => s + a.cost, 0), p: x.reduce((s, a) => s + a.prevCost, 0), b: x.filter(a => a.backlog).reduce((s, a) => s + a.cost, 0),
+             lives: [...new Set(x.map(a => a.life))].sort((a, b) => a - b), units: [...new Set(x.map(a => a.unit))].sort((a, b) => a - b) };
+  }).sort((a, b) => b.v - a.v);
+  bars("#typeBars", tRows.map(r => ({ l: PLURAL[r.t], m: r.t === "Water Main" ? `${fmt(r.n)} segments, ${miles.toFixed(1)} mi` : fmt(r.n), v: r.v, d: money(r.v), c: TVAR[r.t] })));
+  const rng = a => a.length > 1 ? `${a[0]}–${a[a.length - 1]}` : `${a[0] ?? ""}`;
+  table("#typeTbl", [{ h: "Asset" }, { h: "Count", n: 1 }, { h: "Value", n: 1 }, { h: "Change", n: 1 }, { h: "Backlog", n: 1 }, { h: "Useful life" }],
+    tRows.map(r => { const c = pct(r.v, r.p); return [`<span class="sw" style="background:var(${TVAR[r.t]})"></span>${PLURAL[r.t]}`, fmt(r.n), money(r.v), `<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`, money(r.b), `${rng(r.lives)} yrs`]; }));
+
+  // subdivisions
+  const subs = Object.keys(SUB_NAME).map(code => {
+    const x = A.filter(a => a.sub === code), ages = x.filter(a => a.age != null).map(a => a.age);
+    return { code, name: SUB_NAME[code], n: x.length, v: x.reduce((s, a) => s + a.cost, 0), b: x.filter(a => a.backlog).reduce((s, a) => s + a.cost, 0),
+             age: median(ages), n10: x.reduce((s, a) => { if (a.iy == null) return s; let y = a.due <= Y ? Y : a.due, t = 0; while (y <= Y + 10) { if (y > Y) t += a.cost; y += a.life; } return s + t; }, 0) };
+  });
+  const unassigned = A.filter(a => !SUB_NAME[a.sub]).length;
+  const MEAS = { value: ["Value", s => s.v, money], age: ["Median age", s => s.age ?? 0, v => `${Math.round(v)} yrs`], backlog: ["Backlog", s => s.b, money], n10: ["Next 10 years", s => s.n10, money] };
+  const lo = css("--scale-lo"), hi = css("--scale-hi");
+  const mix = (t) => { const h = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); const a = h(lo), b = h(hi); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`; };
+  const drawMap = k => {
+    const [label, f, show] = MEAS[k], vals = subs.map(f), mx = Math.max(...vals, 1);
+    const S2 = Object.fromEntries(subs.map(s => [s.code, s]));
+    let svg = "";
+    HULLS.forEach(h => { const s = S2[h[0]]; const v = s ? f(s) : 0; svg += `<path d="${h[1]}" fill="${mix(v / mx)}"><title>${esc(SUB_NAME[h[0]])}: ${show(v)}</title></path>`; });
+    HULLS.forEach(h => svg += `<text x="${h[2]}" y="${h[3]}" text-anchor="middle" dominant-baseline="middle">${esc(SUB_NAME[h[0]])}</text>`);
+    $("#map").innerHTML = svg; $("#lgLo").textContent = show(0); $("#lgHi").textContent = show(mx);
+    table("#mapTbl", [{ h: "Subdivision" }, { h: "Assets", n: 1 }, { h: label, n: 1 }],
+      [...subs].sort((a, b) => f(b) - f(a)).map(s => [`<span class="sw" style="background:${mix(f(s) / mx)}"></span>${esc(s.name)}`, fmt(s.n), show(f(s))])
+        .concat(unassigned ? [[`<span class="flat">Not assigned to a subdivision</span>`, fmt(unassigned), ""]] : []));
+  };
+  seg("#segMap", [["value", "Value"], ["age", "Median age"], ["backlog", "Backlog"], ["n10", "Next 10 years"]], "value", drawMap); drawMap("value");
+  const drawSubs = k => {
+    const r = [...subs].sort((a, b) => k === "age" ? (b.age ?? 0) - (a.age ?? 0) : b.v - a.v);
+    bars("#subBars", r.map(s => k === "age" ? { l: s.name, m: money(s.v), v: s.age ?? 0, d: s.age != null ? `${Math.round(s.age)} yrs` : "n/a" } : { l: s.name, m: s.age != null ? `${Math.round(s.age)} yrs median` : "", v: s.v, d: money(s.v) }), "--main");
+    table("#subTbl", [{ h: "Subdivision" }, { h: "Assets", n: 1 }, { h: "Value", n: 1 }, { h: "Median age", n: 1 }, { h: "Backlog", n: 1 }],
+      r.map(s => [esc(s.name), fmt(s.n), money(s.v), s.age != null ? `${Math.round(s.age)} yrs` : "", money(s.b)]));
+  };
+  seg("#segSub", [["age", "By age"], ["value", "By value"]], "age", drawSubs); drawSubs("age");
+
+  // decade + remaining life
+  const DEC = ["Pre-1960", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s", "Not dated"];
+  const decOf = a => a.iy == null ? "Not dated" : a.iy < 1960 ? "Pre-1960" : `${Math.floor(a.iy / 10) * 10}s`;
+  const decs = DEC.filter(d => d === "Not dated" || d === "Pre-1960" || +d.slice(0, 4) <= Y);
+  const dOpts = chartOpts(true, true); dOpts.scales.x.ticks.autoSkip = false; dOpts.scales.x.ticks.font = { size: 11 };
+  draw("decadeChart", { type: "bar", data: { labels: decs, datasets: TYPES.map(t => ({ label: t, data: decs.map(d => A.filter(a => a.type === t && decOf(a) === d).reduce((s, a) => s + a.cost, 0)), backgroundColor: css(TVAR[t]) })) }, options: dOpts });
+  const bands = [["Due within 10 years", a => a.rem != null && a.rem <= 10, "--c-past"], ["10–40 years", a => a.rem != null && a.rem > 10 && a.rem <= 40, "--c-fair"], ["40+ years", a => a.rem != null && a.rem > 40, "--c-good"], ["Not dated", a => a.rem == null, "--c-none"]];
+  const bv = bands.map(b => A.filter(b[1]).reduce((s, a) => s + a.cost, 0));
+  const lo2 = chartOpts(false, true); delete lo2.scales; lo2.interaction = { mode: "nearest", intersect: true };
+  lo2.plugins.tooltip = { callbacks: { label: c => `${c.label}: ${money(c.parsed)}` } };
+  lo2.plugins.title = { display: true, text: `Remaining useful life, total ${money(total)}`, color: css("--ink-2"), font: { weight: "600" } };
+  draw("lifeChart", { type: "doughnut", data: { labels: bands.map(b => b[0]), datasets: [{ data: bv, backgroundColor: bands.map(b => css(b[2])), borderColor: css("--sheet"), borderWidth: 2 }] }, options: lo2 });
+  const p40 = Math.round(bv[2] / total * 100), recent = A.filter(a => a.iy >= 1990).reduce((s, a) => s + a.cost, 0);
+  $("#ageTake").textContent = `${Math.round(recent / total * 100)}% of replacement value was installed in 1990 or later, so ${p40}% of value has more than 40 years of life left. ${money(bv[0])} reaches the end of its life within 10 years.`;
+
+  // condition by type
+  const CB = [["Past life", a => a.backlog, "--c-past"], ["Under 25% left", a => !a.backlog && a.rem != null && a.rem / a.life < .25, "--c-poor"], ["25–50% left", a => a.rem != null && a.rem / a.life >= .25 && a.rem / a.life < .5, "--c-fair"], ["Over 50% left", a => a.rem != null && a.rem / a.life >= .5, "--c-good"], ["Not dated", a => a.rem == null, "--c-none"]];
+  $("#cond").innerHTML = TYPES.map(t => {
+    const x = A.filter(a => a.type === t), tv = x.reduce((s, a) => s + a.cost, 0) || 1;
+    const parts = CB.map(c => [c, x.filter(c[1]).reduce((s, a) => s + a.cost, 0)]);
+    return `<div class="r"><span>${PLURAL[t]}</span><div class="stack" role="img" aria-label="${PLURAL[t]}: ${parts.map(([c, v]) => `${c[0]} ${Math.round(v / tv * 100)}%`).join(", ")}">${parts.map(([c, v]) => v ? `<span style="width:${100 * v / tv}%;background:var(${c[2]})" title="${c[0]}: ${money(v)} (${Math.round(v / tv * 100)}%)"></span>` : "").join("")}</div></div>`;
+  }).join("");
+  $("#condKeys").innerHTML = CB.map(c => `<span><span class="sw" style="background:var(${c[2]})"></span>${c[0]}</span>`).join("");
+
+  // data completeness
+  const dated = A.filter(a => a.iy != null).length;
+  const added = TYPES.reduce((s, t) => s + (S.added[t] || 0), 0), retired = TYPES.reduce((s, t) => s + (S.retired[t] || 0), 0);
+  const liveN = TYPES.filter(t => S.live[t]).length;
+  $("#conf").innerHTML = [
+    [`${Math.round(dated / A.length * 100)}%`, "of assets have an install date"],
+    [fmt(A.length - dated), "assets without a date"],
+    [fmt(added), "added to the GIS since the baseline"],
+    [fmt(retired), "baseline assets no longer in the GIS"],
+    [`${liveN} of 5`, "layers read live today"]
+  ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join("");
+  table("#confTbl", [{ h: "Asset" }, { h: "In GIS", n: 1 }, { h: "With install date", n: 1 }, { h: "Added since baseline", n: 1 }, { h: "Source" }],
+    TYPES.map(t => { const x = A.filter(a => a.type === t), d = x.filter(a => a.iy != null).length;
+      return [PLURAL[t], fmt(x.length), `${fmt(d)} (${x.length ? Math.round(d / x.length * 100) : 0}%)`, fmt(S.added[t] || 0), S.live[t] ? "Live GIS" : `<span class="up">Baseline only${S.errors[t] ? ": " + esc(S.errors[t]) : ""}</span>`]; }));
+  $("#maintLink").innerHTML = CONFIG.maintenanceUrl ? `Hydrant and valve service status is tracked on the <a href="${CONFIG.maintenanceUrl}" target="_blank" rel="noopener">maintenance dashboard</a>.` : "";
+
+  // prices + method
+  const seen = new Set(), pr = PRICES.filter(p => { const k = p.Asset + "|" + p.Size; if (seen.has(k)) return false; seen.add(k); return true; });
+  table("#priceTbl", [{ h: "Asset" }, { h: "Size" }, { h: "2026 unit price", n: 1 }, { h: "Previous", n: 1 }, { h: "Change", n: 1 }, { h: "Useful life" }],
+    pr.map(p => { const c = pct(+p.Unit_Price, +p.Previous_Unit_Price); const u = /LF/.test(p.Unit) ? "/LF" : " each";
+      const lives = p.Asset === "Water Main" ? PRICES.filter(q => q.Asset === "Water Main" && q.Size === p.Size).map(q => +q.Useful_Life_Years) : [+p.Useful_Life_Years];
+      return [esc(p.Asset), esc(p.Size), `$${fmt(+p.Unit_Price)}${u}`, p.Previous_Unit_Price ? `$${fmt(+p.Previous_Unit_Price)}` : "", `<span class="${c > 0 ? "up" : "flat"}">${c > 0 ? "+" : ""}${c}%</span>`,
+              p.Asset === "Water Main" ? `${Math.min(...lives)}–${Math.max(...lives)} yrs by material` : `${p.Useful_Life_Years} yrs`]; }));
+  const bas = {}; PRICES.forEach(p => { if (p.Basis) bas[p.Asset] = p.Basis; });
+  $("#basis").innerHTML = Object.entries(bas).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join("");
+  const mainLife = [...new Set(PRICES.filter(p => p.Asset === "Water Main").map(p => `${p.Material} ${p.Useful_Life_Years}`))].join(", ");
+  table("#methodTbl", [{ h: "Step" }, { h: "Approach" }], [
+    ["Asset list", "Live from the town's GIS feature layers. Assets marked abandoned, removed or proposed are left out."],
+    ["Install years", "From the GIS install date where one is filled in, otherwise from the baseline rebuilt from plan records, as-built drawings and construction records."],
+    ["Useful life", `AWWA ranges for mains by material (${esc(mainLife)} years); EPA small-system ranges for hydrants, valves, service lines and meters.`],
+    ["Unit costs", "2026 planning-level construction costs from 2024–2025 bid tabulations, listed above. Mains are priced per foot by diameter."],
+    ["Forecast", `Assets past their life are counted as backlog in ${Y}. Each asset then renews every life cycle through ${CONFIG.horizon}, in ${Y} dollars.`],
+    ["Steady annual need", "Each asset's replacement cost divided by its useful life, added up. The yearly amount that would fund every renewal over time."]
+  ]);
+}
+
+// ---------- CSV download ----------
+$("#csvBtn").onclick = () => {
+  const head = ["globalid", "objectid", "asset_type", "subdivision", "material", "size", "length_ft", "install_year", "useful_life_yrs", "replacement_year", "unit_price", "replacement_cost", "previous_replacement_cost", "backlog", "source"];
+  const lines = [head].concat(S.assets.map(a => [a.id, a.oid, a.type, a.sub, a.material, a.priceSize, a.len ? a.len.toFixed(1) : "", a.iy ?? "", a.life, a.due ?? "", a.unit, a.cost.toFixed(2), a.prevCost.toFixed(2), a.backlog ? 1 : 0, a.src]));
+  const csv = lines.map(l => l.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(",")).join("\r\n");
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  link.download = `round-hill-asset-costs-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+};
+
+// ---------- load ----------
+async function load() {
+  const btn = $("#refresh"); btn.disabled = true; btn.textContent = "Loading…";
+  S.Y = new Date().getFullYear(); S.live = {}; S.errors = {};
+  try {
+    const [pt, bt] = await Promise.all([getText(CONFIG.pricesUrl), getText(CONFIG.baselineUrl)]);
+    PRICES = parseCSV(pt); S.baseline = parseCSV(bt);
+  } catch (e) {
+    $("#notice").hidden = false; $("#notice").innerHTML = `<b>The data files didn't load.</b> ${esc(e.message)}. Check that the <code>data</code> folder was uploaded next to index.html.`;
+    btn.disabled = false; btn.textContent = "Refresh data"; return;
+  }
+  const liveByType = {};
+  await Promise.all(CONFIG.layers.map(async l => { try { liveByType[l.type] = await loadLive(l); S.live[l.type] = true; } catch (e) { S.errors[l.type] = e.message; } }));
+  S.assets = buildAssets(S.baseline, liveByType);
+  const missing = TYPES.filter(t => !S.live[t]);
+  const n = $("#notice");
+  if (missing.length) { n.hidden = false; n.innerHTML = missing.length === 5 ? `<b>Live GIS data couldn't be reached.</b> Showing the baseline asset list instead. Values use the current unit prices.` : `<b>${missing.map(t => PLURAL[t]).join(", ")} couldn't be read from the GIS.</b> Those use the baseline asset list. Details are under "How complete is the data".`; }
+  else n.hidden = true;
+  $("#asof").textContent = "Data as of " + new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  render();
+  btn.disabled = false; btn.textContent = "Refresh data";
+}
+$("#refresh").onclick = load;
+load();
+</script>
+</body>
+</html>
